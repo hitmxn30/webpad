@@ -130,10 +130,6 @@ export default function Playground() {
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       if (e.metaKey || e.ctrlKey) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          rebuild(project.files);
-        }
         if (e.key.toLowerCase() === "b") {
           e.preventDefault();
           setSidebarOpen((o) => !o);
@@ -146,7 +142,7 @@ export default function Playground() {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [project, rebuild]);
+  }, []);
 
   function handleFileChange(id: string, content: string) {
     setProject((prev) => ({
@@ -252,12 +248,7 @@ export default function Playground() {
       {/* Preview + Console column */}
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
-          <span className="text-xs text-gray-400">
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">⌘</kbd>
-            <span className="mx-1">+</span>
-            <kbd className="px-1.5 py-0.5 rounded bg-gray-800 text-gray-300 font-mono">Enter</kbd>
-            <span className="ml-2">to run</span>
-          </span>
+          <span className="text-xs text-gray-400">Make edits to see changes here</span>
           <button
             onClick={handleCopyLink}
             className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
