@@ -4,9 +4,16 @@ import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useRef } from "react";
 import PreviewFrame from "./PreviewFrame";
 import ConsolePanel, { ConsoleMessage, ConsoleLevel } from "./ConsolePanel";
+import FileTreePanel from "./FileTreePanel";
 import { buildSrcdoc } from "@/lib/buildSrcdoc";
-import { readStoredState, writeStoredState, type EditorState } from "@/lib/storage";
+import { readStoredState, writeStoredState } from "@/lib/storage";
 import { decodeStateFromHash, writeHash } from "@/lib/urlState";
+import {
+  type ProjectFile,
+  type ProjectState,
+  generateFileId,
+  inferLanguage,
+} from "@/lib/types";
 
 const EditorPanel = dynamic(() => import("./EditorPanel"), { ssr: false });
 
@@ -44,15 +51,17 @@ const DEFAULT_JS = `function handleClick() {
   alert('Hello from webpad!');
 }`;
 
-type Lang = "html" | "css" | "javascript";
-
-const DEFAULT_STATE: EditorState = {
-  html: DEFAULT_HTML,
-  css: DEFAULT_CSS,
-  javascript: DEFAULT_JS,
+const DEFAULT_STATE: ProjectState = {
+  version: 2,
+  activeFileId: "html-index",
+  files: [
+    { id: "html-index", name: "index.html", language: "html",       content: DEFAULT_HTML },
+    { id: "css-style",  name: "style.css",  language: "css",        content: DEFAULT_CSS },
+    { id: "js-script",  name: "script.js",  language: "javascript", content: DEFAULT_JS },
+  ],
 };
 
-function resolveInitialState(): EditorState {
+function resolveInitialState(): ProjectState {
   if (typeof window === "undefined") return DEFAULT_STATE;
   const fromHash = decodeStateFromHash(window.location.hash);
   if (fromHash) return fromHash;
@@ -62,39 +71,44 @@ function resolveInitialState(): EditorState {
 }
 
 export default function Playground() {
-  const [values, setValues] = useState<EditorState>(DEFAULT_STATE);
-  const [srcdoc, setSrcdoc] = useState(() =>
-    buildSrcdoc(DEFAULT_HTML, DEFAULT_CSS, DEFAULT_JS)
-  );
+  const [project, setProject] = useState<ProjectState>(DEFAULT_STATE);
+  const [srcdoc, setSrcdoc] = useState(() => buildSrcdoc(DEFAULT_STATE.files));
   const [hydrated, setHydrated] = useState(false);
   const [messages, setMessages] = useState<ConsoleMessage[]>([]);
   const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [newFileTrigger, setNewFileTrigger] = useState(0);
   const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageIdRef = useRef(0);
 
-  // Hydrate from URL hash → localStorage → defaults after mount (avoids SSR mismatch).
+  const activeFile: ProjectFile =
+    project.files.find((f) => f.id === project.activeFileId) ??
+    project.files[0] ??
+    DEFAULT_STATE.files[0];
+
+  // Hydrate from URL hash → localStorage → defaults after mount.
   useEffect(() => {
     const initial = resolveInitialState();
-    setValues(initial);
-    setSrcdoc(buildSrcdoc(initial.html, initial.css, initial.javascript));
+    setProject(initial);
+    setSrcdoc(buildSrcdoc(initial.files));
     setHydrated(true);
   }, []);
 
-  const rebuild = useCallback((next: EditorState) => {
-    setSrcdoc(buildSrcdoc(next.html, next.css, next.javascript));
+  const rebuild = useCallback((files: ProjectFile[]) => {
+    setSrcdoc(buildSrcdoc(files));
     setMessages([]);
   }, []);
 
-  // Debounced rebuild + persistence (localStorage + URL hash).
+  // Debounced rebuild + persistence.
   useEffect(() => {
     if (!hydrated) return;
     const id = setTimeout(() => {
-      rebuild(values);
-      writeStoredState(values);
-      writeHash(values);
+      rebuild(project.files);
+      writeStoredState(project);
+      writeHash(project);
     }, 500);
     return () => clearTimeout(id);
-  }, [values, hydrated, rebuild]);
+  }, [project, hydrated, rebuild]);
 
   // Receive console messages from sandboxed iframe.
   useEffect(() => {
@@ -112,20 +126,75 @@ export default function Playground() {
     return () => window.removeEventListener("message", handler);
   }, []);
 
-  // Cmd+Enter / Ctrl+Enter triggers immediate rebuild.
+  // Keyboard shortcuts.
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
-      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-        e.preventDefault();
-        rebuild(values);
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          rebuild(project.files);
+        }
+        if (e.key.toLowerCase() === "b") {
+          e.preventDefault();
+          setSidebarOpen((o) => !o);
+        }
+        if (e.key.toLowerCase() === "n") {
+          e.preventDefault();
+          setNewFileTrigger((c) => c + 1);
+        }
       }
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [values, rebuild]);
+  }, [project, rebuild]);
 
-  function handleChange(lang: Lang, value: string) {
-    setValues((prev) => ({ ...prev, [lang]: value }));
+  function handleFileChange(id: string, content: string) {
+    setProject((prev) => ({
+      ...prev,
+      files: prev.files.map((f) => (f.id === id ? { ...f, content } : f)),
+    }));
+  }
+
+  function handleSetActiveFile(id: string) {
+    setProject((prev) => ({ ...prev, activeFileId: id }));
+  }
+
+  function handleCreateFile(name: string) {
+    const id = generateFileId();
+    const language = inferLanguage(name);
+    setProject((prev) => ({
+      ...prev,
+      activeFileId: id,
+      files: [...prev.files, { id, name, language, content: "" }],
+    }));
+  }
+
+  function handleRenameFile(id: string, newName: string) {
+    setProject((prev) => ({
+      ...prev,
+      files: prev.files.map((f) => (f.id === id ? { ...f, name: newName } : f)),
+    }));
+  }
+
+  function handleDeleteFile(id: string) {
+    setProject((prev) => {
+      const files = prev.files.filter((f) => f.id !== id);
+      const activeFileId =
+        prev.activeFileId === id ? (files[0]?.id ?? "") : prev.activeFileId;
+      return { ...prev, files, activeFileId };
+    });
+  }
+
+  function handleReorderFiles(draggedId: string, targetId: string) {
+    setProject((prev) => {
+      const files = [...prev.files];
+      const fromIdx = files.findIndex((f) => f.id === draggedId);
+      const toIdx = files.findIndex((f) => f.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) return prev;
+      const [item] = files.splice(fromIdx, 1);
+      files.splice(toIdx, 0, item);
+      return { ...prev, files };
+    });
   }
 
   async function handleCopyLink() {
@@ -134,7 +203,6 @@ export default function Playground() {
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopyState("copied");
     } catch {
-      // clipboard access denied in some browsers/contexts
       if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
       setCopyState("failed");
     }
@@ -147,9 +215,41 @@ export default function Playground() {
 
   return (
     <div className="flex h-screen bg-gray-950">
-      <div className="flex-1 min-w-0 border-r border-gray-700">
-        <EditorPanel values={values} onChange={handleChange} />
+      {/* Sidebar */}
+      {sidebarOpen && (
+        <div className="w-[200px] shrink-0 border-r border-gray-700 flex flex-col bg-gray-900">
+          <FileTreePanel
+            files={project.files}
+            activeFileId={project.activeFileId}
+            onActivate={handleSetActiveFile}
+            onCreate={handleCreateFile}
+            onRename={handleRenameFile}
+            onDelete={handleDeleteFile}
+            onReorder={handleReorderFiles}
+            triggerCreate={newFileTrigger}
+          />
+        </div>
+      )}
+
+      {/* Editor column */}
+      <div className="flex-1 min-w-0 flex flex-col border-r border-gray-700">
+        {/* Editor toolbar: sidebar toggle + active filename */}
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="text-gray-400 hover:text-white text-sm font-mono px-1 shrink-0"
+            title="Toggle sidebar (⌘B)"
+          >
+            ≡
+          </button>
+          <span className="text-xs text-gray-300 truncate">{activeFile.name}</span>
+        </div>
+        <div className="flex-1 min-h-0">
+          <EditorPanel file={activeFile} onChange={handleFileChange} />
+        </div>
       </div>
+
+      {/* Preview + Console column */}
       <div className="flex-1 min-w-0 flex flex-col">
         <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
           <span className="text-xs text-gray-400">
@@ -162,7 +262,11 @@ export default function Playground() {
             onClick={handleCopyLink}
             className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
           >
-            {copyState === "copied" ? "Copied!" : copyState === "failed" ? "Failed — copy manually" : "Copy link"}
+            {copyState === "copied"
+              ? "Copied!"
+              : copyState === "failed"
+              ? "Failed — copy manually"
+              : "Copy link"}
           </button>
         </div>
         <div className="flex-1 min-h-0">

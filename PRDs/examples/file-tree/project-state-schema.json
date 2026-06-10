@@ -1,0 +1,30 @@
+{
+  "version": 2,
+  "activeFileId": "js-main",
+  "files": [
+    {
+      "id": "html-index",
+      "name": "index.html",
+      "language": "html",
+      "content": "<h1>Hello</h1>\n<script src=\"utils.js\"></script>"
+    },
+    {
+      "id": "css-style",
+      "name": "style.css",
+      "language": "css",
+      "content": "body { font-family: sans-serif; }"
+    },
+    {
+      "id": "js-main",
+      "name": "main.js",
+      "language": "javascript",
+      "content": "console.log('main');"
+    },
+    {
+      "id": "js-utils",
+      "name": "utils.js",
+      "language": "javascript",
+      "content": "function add(a, b) { return a + b; }"
+    }
+  ]
+}

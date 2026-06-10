@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    /* contents of style.css */
+    body { font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <!-- CONSOLE_INTERCEPT script injected here (existing behaviour) -->
+  <script>/* console intercept */</script>
+
+  <!-- index.html body content -->
+  <h1>Hello</h1>
+
+  <!-- each .js file gets its own <script> tag, in tree order -->
+  <script>
+    /* utils.js */
+    function add(a, b) { return a + b; }
+  </script>
+  <script>
+    /* main.js */
+    console.log('main');
+  </script>
+</body>
+</html>

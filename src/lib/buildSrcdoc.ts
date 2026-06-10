@@ -1,3 +1,5 @@
+import { type ProjectFile } from "./types";
+
 const CONSOLE_INTERCEPT = `
 (function(){
   var send = function(level, args){
@@ -23,6 +25,18 @@ const CONSOLE_INTERCEPT = `
 })();
 `;
 
-export function buildSrcdoc(html: string, css: string, js: string): string {
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><style>${css}</style></head><body>${html}<script>${CONSOLE_INTERCEPT}<\/script><script>${js}<\/script></body></html>`;
+export function buildSrcdoc(files: ProjectFile[]): string {
+  const htmlFile  = files.find(f => f.language === "html");
+  const cssFiles  = files.filter(f => f.language === "css");
+  const jsFiles   = files.filter(f => f.language === "javascript");
+
+  const styleTags  = cssFiles.map(f => `<style>${f.content}</style>`).join("");
+  const bodyHtml   = htmlFile?.content ?? "";
+  // Each JS file is its own <script> block; <\/script> escape prevents srcdoc breakage
+  const scriptTags = jsFiles.map(f => `<script>${f.content}<\/script>`).join("");
+
+  return (
+    `<!DOCTYPE html><html><head><meta charset="UTF-8"/>${styleTags}</head>` +
+    `<body><script>${CONSOLE_INTERCEPT}<\/script>${bodyHtml}${scriptTags}</body></html>`
+  );
 }
