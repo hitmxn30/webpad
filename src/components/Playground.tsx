@@ -68,7 +68,8 @@ export default function Playground() {
   );
   const [hydrated, setHydrated] = useState(false);
   const [messages, setMessages] = useState<ConsoleMessage[]>([]);
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageIdRef = useRef(0);
 
   // Hydrate from URL hash → localStorage → defaults after mount (avoids SSR mismatch).
@@ -89,9 +90,9 @@ export default function Playground() {
     if (!hydrated) return;
     const id = setTimeout(() => {
       rebuild(values);
+      writeStoredState(values);
+      writeHash(values);
     }, 500);
-    writeStoredState(values);
-    writeHash(values);
     return () => clearTimeout(id);
   }, [values, hydrated, rebuild]);
 
@@ -130,11 +131,14 @@ export default function Playground() {
   async function handleCopyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      setCopyState("copied");
     } catch {
-      // ignore
+      // clipboard access denied in some browsers/contexts
+      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+      setCopyState("failed");
     }
+    copiedTimerRef.current = setTimeout(() => setCopyState("idle"), 1500);
   }
 
   function handleClearConsole() {
@@ -158,7 +162,7 @@ export default function Playground() {
             onClick={handleCopyLink}
             className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
           >
-            {copied ? "Copied!" : "Copy link"}
+            {copyState === "copied" ? "Copied!" : copyState === "failed" ? "Failed — copy manually" : "Copy link"}
           </button>
         </div>
         <div className="flex-1 min-h-0">
