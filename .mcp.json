@@ -1,0 +1,10 @@
+{
+    "mcpServers": {
+        "lsp": {
+            "command": "node",
+            "args": [
+                "/Users/saurabhsuryavanshi/Desktop/D/lsp-mcp-server/dist/index.js"
+            ]
+        }
+    }
+}
