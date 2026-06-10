@@ -2,7 +2,6 @@
 
 import dynamic from "next/dynamic";
 import { useState, useEffect, useCallback, useRef } from "react";
-import PreviewFrame from "./PreviewFrame";
 import ConsolePanel, { ConsoleMessage, ConsoleLevel } from "./ConsolePanel";
 import FileTreePanel from "./FileTreePanel";
 import { buildSrcdoc } from "@/lib/buildSrcdoc";
@@ -16,6 +15,7 @@ import {
 } from "@/lib/types";
 
 const EditorPanel = dynamic(() => import("./EditorPanel"), { ssr: false });
+const PreviewFrame = dynamic(() => import("./PreviewFrame"), { ssr: false });
 
 const DEFAULT_HTML = `<h1>Hello, webpad!</h1>
 <p>Edit the panels on the left to see changes here.</p>
@@ -270,7 +270,11 @@ export default function Playground() {
           </button>
         </div>
         <div className="flex-1 min-h-0">
-          <PreviewFrame srcdoc={srcdoc} />
+          {hydrated ? (
+            <PreviewFrame srcdoc={srcdoc} />
+          ) : (
+            <div className="w-full h-full bg-white" />
+          )}
         </div>
         <ConsolePanel messages={messages} onClear={handleClearConsole} />
       </div>
