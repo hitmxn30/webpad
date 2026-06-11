@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.file_path' | grep -q 'tsconfig.json' && echo '{\"decision\":\"block\",\"reason\":\"Editing tsconfig.json is blocked by project hook.\"}' && exit 2 || exit 0"
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc *)",
+      "Bash(npm install *)",
+      "Bash(node *)",
+      "Bash(PORT=3001 npm run start)",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(python3 -c ' *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "lsp"
+  ],
+  "enabledPlugins": {
+    "helpline-ai-layer@helpline-tooling": true
+  }
+}
