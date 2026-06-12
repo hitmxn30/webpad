@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Webpad
 
-## Getting Started
+A lightweight, in-browser HTML/CSS/JavaScript playground — no build step, no server, just write and see results instantly.
 
-First, run the development server:
+**Live:** [https://webpad-eight.vercel.app/](https://webpad-eight.vercel.app/)
+
+## What it does
+
+Webpad gives you three editor panels (HTML, CSS, JavaScript) and a live preview that updates as you type. It also includes a built-in console that captures `console.log` / `warn` / `error` output from your running code — no DevTools required.
+
+Your work is saved automatically to `localStorage` and encoded in the URL hash so you can share a snippet with a link.
+
+## Features
+
+- **Monaco editor** — the same editor powering VS Code, with syntax highlighting and autocomplete
+- **Live preview** — iframe rebuilds 500ms after your last keystroke
+- **Shareable links** — full editor state is LZ-compressed into the URL hash; paste it anywhere
+- **Session restore** — `localStorage` restores your last session on revisit
+- **Console panel** — captures `log`, `warn`, and `error` calls from the preview iframe
+- **Sandboxed iframe** — user code runs in a null-origin sandbox (`allow-scripts` only, no `allow-same-origin`) for safety
+
+## Tech stack
+
+- [Next.js](https://nextjs.org/) (App Router)
+- [Monaco Editor](https://microsoft.github.io/monaco-editor/) via `@monaco-editor/react`
+- [lz-string](https://github.com/pieroxy/lz-string) for URL state compression
+- [Tailwind CSS](https://tailwindcss.com/)
+
+## Running locally
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install
+npm run dev       # dev server at http://localhost:3000
+npm run build     # production build (also runs TypeScript check)
+npm run lint      # ESLint
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+All execution is client-side. `Playground.tsx` owns the `html`, `css`, and `javascript` strings and passes them to `buildSrcdoc.ts`, which assembles a single `srcdoc` string injected into a sandboxed `<iframe>`. CSS lands in `<style>` in `<head>`; a console-intercept script and the user's JS run in `<body>`. The iframe posts console events back to the parent via `postMessage`.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+State hydration on load follows this priority order:
+1. URL hash — for shared links
+2. `localStorage` — for session restore
+3. Hardcoded defaults
