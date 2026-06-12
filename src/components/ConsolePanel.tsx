@@ -14,9 +14,9 @@ interface Props {
 }
 
 const LEVEL_STYLES: Record<ConsoleLevel, string> = {
-  log: "text-gray-100",
-  warn: "text-yellow-400",
-  error: "text-red-400",
+  log:   "text-primary",
+  warn:  "text-warning",
+  error: "text-error",
 };
 
 function formatArg(arg: unknown): string {
@@ -37,24 +37,24 @@ function formatArg(arg: unknown): string {
 
 export default function ConsolePanel({ messages, onClear }: Props) {
   return (
-    <div className="h-48 shrink-0 border-t border-gray-700 bg-gray-950 flex flex-col">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
-        <span className="text-xs font-medium text-gray-300 uppercase tracking-wide">Console</span>
+    <div className="h-48 shrink-0 border-t border-line bg-canvas flex flex-col">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-line bg-surface shrink-0">
+        <span className="text-xs font-medium text-primary uppercase tracking-wide">Console</span>
         <button
           onClick={onClear}
-          className="text-xs text-gray-400 hover:text-white transition-colors"
+          className="text-xs text-secondary hover:text-primary transition-colors"
         >
           Clear
         </button>
       </div>
       <div className="flex-1 min-h-0 overflow-y-auto font-mono text-xs">
         {messages.length === 0 ? (
-          <div className="px-3 py-2 text-gray-500">No output yet.</div>
+          <div className="px-3 py-2 text-muted">No output yet.</div>
         ) : (
           messages.map((msg) => (
             <div
               key={msg.id}
-              className={`px-3 py-1 border-b border-gray-800 whitespace-pre-wrap break-words ${LEVEL_STYLES[msg.level]}`}
+              className={`px-3 py-1 border-b border-subline whitespace-pre-wrap break-words animate-slide-in-up ${LEVEL_STYLES[msg.level]}`}
             >
               {msg.args.map(formatArg).join(" ")}
             </div>

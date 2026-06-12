@@ -109,8 +109,8 @@ export default function FileTreePanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 shrink-0">
-        <span className="text-xs font-medium text-gray-300 uppercase tracking-wide">
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-line shrink-0">
+        <span className="text-xs font-medium text-primary uppercase tracking-wide">
           Files
         </span>
         <button
@@ -118,7 +118,7 @@ export default function FileTreePanel({
             setIsCreating(true);
             setNewFileName("");
           }}
-          className="text-gray-400 hover:text-white text-base leading-none px-1"
+          className="text-secondary hover:text-primary text-base leading-none px-1"
           title="New file (⌘N)"
         >
           +
@@ -127,7 +127,7 @@ export default function FileTreePanel({
 
       {/* Multiple-HTML warning */}
       {multipleHtml && (
-        <div className="px-3 py-1.5 text-xs text-yellow-500 border-b border-gray-700 shrink-0">
+        <div className="px-3 py-1.5 text-xs text-warning border-b border-line shrink-0">
           ⚠ Only first HTML file is rendered
         </div>
       )}
@@ -149,16 +149,16 @@ export default function FileTreePanel({
               if (editingId !== file.id) onActivate(file.id);
             }}
             className={[
-              "group flex items-center gap-1 px-2 py-1 cursor-pointer select-none text-xs",
+              "group flex items-center gap-1 py-1 cursor-pointer select-none text-xs",
               file.id === activeFileId
-                ? "bg-gray-800 text-white"
-                : "text-gray-400 hover:bg-gray-800 hover:text-gray-200",
+                ? "bg-elevated text-primary border-l-2 border-accent pl-[6px] pr-2"
+                : "px-2 text-secondary hover:bg-elevated hover:text-primary",
               file.id === draggedId ? "opacity-40" : "",
             ].join(" ")}
           >
             {editingId === file.id ? (
               <input
-                className="flex-1 min-w-0 bg-gray-700 text-white text-xs px-1 py-0.5 rounded outline-none border border-blue-500"
+                className="flex-1 min-w-0 bg-elevated text-primary text-xs px-1 py-0.5 rounded outline-none border border-accent"
                 value={editingName}
                 onChange={(e) => setEditingName(e.target.value)}
                 onKeyDown={handleRenameKey}
@@ -182,7 +182,7 @@ export default function FileTreePanel({
                     e.stopPropagation();
                     startEditing(file);
                   }}
-                  className="opacity-0 group-hover:opacity-100 text-gray-500 hover:text-white shrink-0 leading-none px-0.5 transition-opacity"
+                  className="opacity-0 group-hover:opacity-100 text-muted hover:text-primary shrink-0 leading-none px-0.5 transition-opacity"
                   title="Rename"
                 >
                   ✎
@@ -192,8 +192,8 @@ export default function FileTreePanel({
                   disabled={isLastHtml(file)}
                   className={
                     isLastHtml(file)
-                      ? "shrink-0 leading-none px-0.5 opacity-30 cursor-not-allowed text-gray-600"
-                      : "shrink-0 leading-none px-0.5 opacity-0 group-hover:opacity-100 text-gray-500 hover:text-red-400 transition-opacity"
+                      ? "shrink-0 leading-none px-0.5 opacity-30 cursor-not-allowed text-muted"
+                      : "shrink-0 leading-none px-0.5 opacity-0 group-hover:opacity-100 text-muted hover:text-error transition-opacity"
                   }
                   title={
                     isLastHtml(file)
@@ -212,7 +212,7 @@ export default function FileTreePanel({
         {isCreating && (
           <div className="px-2 py-1">
             <input
-              className="w-full bg-gray-700 text-white text-xs px-1 py-0.5 rounded outline-none border border-blue-500"
+              className="w-full bg-elevated text-primary text-xs px-1 py-0.5 rounded outline-none border border-accent"
               value={newFileName}
               onChange={(e) => setNewFileName(e.target.value)}
               onKeyDown={handleCreateKey}

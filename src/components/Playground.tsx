@@ -210,10 +210,10 @@ export default function Playground() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-950">
+    <div className="flex h-screen bg-canvas">
       {/* Sidebar */}
       {sidebarOpen && (
-        <div className="w-[200px] shrink-0 border-r border-gray-700 flex flex-col bg-gray-900">
+        <div className="w-[200px] shrink-0 border-r border-line flex flex-col bg-surface animate-slide-in-left">
           <FileTreePanel
             files={project.files}
             activeFileId={project.activeFileId}
@@ -228,17 +228,17 @@ export default function Playground() {
       )}
 
       {/* Editor column */}
-      <div className="flex-1 min-w-0 flex flex-col border-r border-gray-700">
+      <div className="flex-1 min-w-0 flex flex-col border-r border-line">
         {/* Editor toolbar: sidebar toggle + active filename */}
-        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
+        <div className="flex items-center gap-2 px-3 py-1.5 border-b border-line bg-surface shrink-0">
           <button
             onClick={() => setSidebarOpen((o) => !o)}
-            className="text-gray-400 hover:text-white text-sm font-mono px-1 shrink-0"
+            className="text-secondary hover:text-primary text-sm font-mono px-1 shrink-0"
             title="Toggle sidebar (⌘B)"
           >
             ≡
           </button>
-          <span className="text-xs text-gray-300 truncate">{activeFile.name}</span>
+          <span className="text-xs text-primary truncate">{activeFile.name}</span>
         </div>
         <div className="flex-1 min-h-0">
           <EditorPanel file={activeFile} onChange={handleFileChange} />
@@ -247,11 +247,11 @@ export default function Playground() {
 
       {/* Preview + Console column */}
       <div className="flex-1 min-w-0 flex flex-col">
-        <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700 bg-gray-900 shrink-0">
-          <span className="text-xs text-gray-400">Make edits to see changes here</span>
+        <div className="flex items-center justify-between px-3 py-1.5 border-b border-line bg-surface shrink-0">
+          <span className="text-xs text-muted">Make edits to see changes here</span>
           <button
             onClick={handleCopyLink}
-            className="text-xs px-2 py-1 rounded bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+            className="text-xs px-2 py-1 rounded bg-accent hover:bg-accent-hover text-canvas transition-colors"
           >
             {copyState === "copied"
               ? "Copied!"
